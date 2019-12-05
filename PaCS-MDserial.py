@@ -20,9 +20,9 @@ restep=2
 nroundadd=100 
 comdistmax=7.0
 
-groupA="Actin_ADP_ActinMG"
-groupB="Myosin_ATP_MyosinMG"
-grofn="npt1-3.gro"
+groupA="Protein"
+groupB="triNAG"
+grofn="input.gro"
 mdfn="mdpacs.mdp"
 mdinitfn="md.mdp"
 vfn=""
@@ -36,8 +36,8 @@ ndxfn="index.ndx"
 
 
 
-gmxcmd="mpijob -np 1 ~/software/gromacs/bin/gmx_gpu5.1.2 "  #gmx serial calling
-gmxcmd2="mpijob ~/software/gromacs/bin/gmx_gpu5.1.2 "#call MPI task in this variable
+gmxcmd="mpirun -np 1 gmx_gpu "  #gmx serial calling
+gmxcmd2="mpirun gmx_gpu "#call MPI task in this variable
 #use negative number for system choice of MD running conf.
 gpu=1
 gpuid="0011"
