@@ -154,7 +154,7 @@ if rest<0:
 		if vers<=2016:
                 	os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -maxwarn 10")
 		else:
-                	os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -ref "+grofn+" -maxwarn 10")			
+                	os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -r "+grofn+" -maxwarn 10")			
 	print("################################")
 	if gpu>=0 and ntomp>0:
 		os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-0-0/"+outfnpf+"-0-0 -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
