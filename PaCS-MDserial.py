@@ -52,6 +52,14 @@ outfn=wdir+"/"+outfnpf
 # Subroutine is below:
 #################################################
 
+def GROcheck():
+	os.system(gmxcmd+" | grep 'GROMACS version' > gmxversion ")
+	f=open("gmxversion","r")
+	ln=f.readlines()
+	vers=ln[0].split()[-1].split(".")[0]
+	return float(vers)
+	
+
 def checkcycle():
 	n=1
 	chkfile=True
@@ -97,6 +105,9 @@ def checkcycle():
 # Main program is below:
 #################################################
 
+#check version of GROMACS
+vers=GROcheck()
+
 #write selection file
 f=open(wdir+"/sel.dat","w")
 f.write('com of group "'+groupA+'" plus com of group "'+groupB+'"')
@@ -135,9 +146,15 @@ if rest<0:
 	os.system("cp -r "+wdir+"/"+grofn+" "+outfn+"-0-0/") 
 	if len(vfn)>0:
 		os.system("cp -r "+wdir+"/"+vfn+" "+outfn+"-0-0/")
-		os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -t "+outfn+"-0-0/"+vfn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -maxwarn 10")
+		if vers<=2016:
+			os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -t "+outfn+"-0-0/"+vfn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -maxwarn 10")
+		else:
+			os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -t "+outfn+"-0-0/"+vfn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -ref "+grofn+" -maxwarn 10")
 	else:
-                os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -maxwarn 10")
+		if vers<=2016:
+                	os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -maxwarn 10")
+		else:
+                	os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -ref "+grofn+" -maxwarn 10")			
 	print("################################")
 	if gpu>=0 and ntomp>0:
 		os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-0-0/"+outfnpf+"-0-0 -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
@@ -260,7 +277,10 @@ while n<nround:
 		os.system("cp -r "+wdir+"/index.ndx"+" "+outfn+"-"+str(n)+"-"+str(m)+"/")
 
 		#running simulation with random vel (set in mdp file)
-		os.system(gmxcmd+" grompp -f "+outfn+"-"+str(n)+"-"+str(m)+"/"+mdfn+" -c "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -o "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".tpr -maxwarn 10")
+		if vers <=2016:
+			os.system(gmxcmd+" grompp -f "+outfn+"-"+str(n)+"-"+str(m)+"/"+mdfn+" -c "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -o "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".tpr -maxwarn 10")
+		else:
+			os.system(gmxcmd+" grompp -f "+outfn+"-"+str(n)+"-"+str(m)+"/"+mdfn+" -c "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -o "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".tpr -ref "+grofn+" -maxwarn 10")
 		if gpu>=0 and ntomp>0:
 			os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+" -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 		else:
