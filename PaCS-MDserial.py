@@ -149,7 +149,7 @@ if rest<0:
 		if vers<=2016:
 			os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -t "+outfn+"-0-0/"+vfn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -maxwarn 10")
 		else:
-			os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -t "+outfn+"-0-0/"+vfn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -ref "+grofn+" -maxwarn 10")
+			os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -t "+outfn+"-0-0/"+vfn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -r "+grofn+" -maxwarn 10")
 	else:
 		if vers<=2016:
                 	os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/"+outfnpf+"-0-0.tpr -maxwarn 10")
@@ -280,7 +280,7 @@ while n<nround:
 		if vers <=2016:
 			os.system(gmxcmd+" grompp -f "+outfn+"-"+str(n)+"-"+str(m)+"/"+mdfn+" -c "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -o "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".tpr -maxwarn 10")
 		else:
-			os.system(gmxcmd+" grompp -f "+outfn+"-"+str(n)+"-"+str(m)+"/"+mdfn+" -c "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -o "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".tpr -ref "+grofn+" -maxwarn 10")
+			os.system(gmxcmd+" grompp -f "+outfn+"-"+str(n)+"-"+str(m)+"/"+mdfn+" -c "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -o "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".tpr -r "+grofn+" -maxwarn 10")
 		if gpu>=0 and ntomp>0:
 			os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+" -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 		else:
