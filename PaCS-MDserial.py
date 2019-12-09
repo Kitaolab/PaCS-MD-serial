@@ -22,7 +22,7 @@ nroundadd=100
 comdistmax=7.0
 
 groupA="Protein"
-groupB="triNAG"
+groupB="TNG"
 grofn="input.gro"
 mdfn="mdpacs.mdp"
 mdinitfn="md.mdp"
