@@ -53,7 +53,7 @@ outfn=wdir+"/"+outfnpf
 #################################################
 
 def GROcheck():
-	os.system(gmxcmd+" | grep 'GROMACS version' > gmxversion ")
+	os.system(gmxcmd+" --version | grep 'GROMACS version' > gmxversion ")
 	f=open("gmxversion","r")
 	ln=f.readlines()
 	vers=ln[0].split()[-1].split(".")[0]
