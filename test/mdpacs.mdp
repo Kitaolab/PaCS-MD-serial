@@ -1,5 +1,5 @@
 title		= OPLS Lysozyme MD simulation 
-define		= -DPOSRES-S 	; position restrain the protein
+define		= -DPOSRES-S 	-DFLEXIBLE; position restrain the protein
 ; Run parameters
 integrator	= md-vv		; leap-frog integrator
 nsteps		= 100000	; 2 * 500000 = 1000 ps (1 ns)
@@ -17,10 +17,10 @@ nstxout-compressed  = 100	       	      ; save compressed coordinates every 10.0
 compressed-x-grps   = System    ; replaces xtc-grps
 ; Bond parameters
 continuation	        = no		; Restarting after NPT 
-constraint_algorithm    = lincs	    ; holonomic constraints 
-constraints	            = honds	; all bonds (even heavy atom-H bonds) constrained
-lincs_iter	            = 1		    ; accuracy of LINCS
-lincs_order	            = 4		    ; also related to accuracy
+;constraint_algorithm    = lincs	    ; holonomic constraints 
+;constraints	            = honds	; all bonds (even heavy atom-H bonds) constrained
+;lincs_iter	            = 1		    ; accuracy of LINCS
+;lincs_order	            = 4		    ; also related to accuracy
 ; Neighborsearching
 cutoff-scheme   = Verlet
 ns_type		    = grid		; search neighboring grid cells
