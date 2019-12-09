@@ -36,8 +36,8 @@ ndxfn="index.ndx"
 
 
 
-gmxcmd="mpirun -np 1 gmx_gpu "  #gmx serial calling
-gmxcmd2="mpirun gmx_gpu "#call MPI task in this variable
+gmxcmd="mpirun -np 1 gmx "  #gmx serial calling
+gmxcmd2="mpirun -np 1 gmx "#call MPI task in this variable
 #use negative number for system choice of MD running conf.
 gpu=1
 gpuid="0011"
