@@ -1,5 +1,5 @@
 title		= OPLS Lysozyme MD simulation 
-define		= -DPOSRES-S 	; position restrain the protein
+define		= -DPOSRES-S -DFLEXIBLE	; position restrain the protein
 ; Run parameters
 integrator	= md-vv		; leap-frog integrator
 nsteps		= 1000000	; 2 * 500000 = 1000 ps (1 ns)
