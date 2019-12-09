@@ -39,9 +39,9 @@ ndxfn="index.ndx"
 gmxcmd="mpirun -np 1 gmx "  #gmx serial calling
 gmxcmd2="mpirun -np 1 gmx "#call MPI task in this variable
 #use negative number for system choice of MD running conf.
-gpu=1
+gpu=-1
 gpuid="0011"
-ntomp=6  
+ntomp=4  
 
 wdir=os.getcwd()
 outfn=wdir+"/"+outfnpf
