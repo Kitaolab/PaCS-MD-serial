@@ -1,7 +1,7 @@
 # PaCS-MD simulation script
 
-PaCS-MD-dissociation.py: python script for PaCS-MD dissociation simulations.
-PaCS-MD-docking.py: python script for switching between association and dissociation PaCS-MD simulations 
+* PaCS-MD-dissociation.py: python script for PaCS-MD dissociation simulations.
+* PaCS-MD-docking.py: python script for switching between association and dissociation PaCS-MD simulations 
 
 
 ## Prerequisites
