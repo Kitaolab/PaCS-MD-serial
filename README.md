@@ -16,5 +16,4 @@ This script is tested with GROMACS version 5.x.
 1. GROMACS 2019.x ++ on AMD gpu card: add -pme cpu in gpuid.
 Example: gpuid="0 -pme cpu" and "gpu=1"
 
-2. Positional restraint:
 ```
