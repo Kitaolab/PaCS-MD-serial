@@ -75,15 +75,15 @@ def checkcycle():
 		print("Currently check cycle "+str(n)+"!")
 		failcyc=0
 		for cnt in range(1,nbin+1):
-			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/"+outfnpf+"-"+str(n)+"-"+str(cnt)+".tpr")):
+			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/topol.tpr")):
 				chkfile=False 
 				failcyc=cnt 
 				break
-			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/"+outfnpf+"-"+str(n)+"-"+str(cnt)+".gro")):
+			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/confgro.gro")):
 				chkfile=False 
 				failcyc=cnt 
 				break
-			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/"+outfnpf+"-"+str(n)+"-"+str(cnt)+".xtc")):
+			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/traj_comp.xtc")):
 				chkfile=False 
 				failcyc=cnt 
 				break
@@ -95,11 +95,11 @@ def checkcycle():
 				chkfile=False 
 				failcyc=cnt 
 				break
-			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/"+outfnpf+"-"+str(n)+"-"+str(cnt)+".edr")):
+			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/ener.edr")):
 				chkfile=False 
 				failcyc=cnt 
 				break
-			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/"+outfnpf+"-"+str(n)+"-"+str(cnt)+".log")):
+			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/md.log")):
 				chkfile=False 
 				failcyc=cnt 
 				break
