@@ -19,7 +19,7 @@ from multiprocessing import Pool
 
 nbin=30
 nround=100
-rest=-1      #set this < 0 to begin the new PaCSMD simulation 
+rest=0      #set this < 0 to begin the new PaCSMD simulation 
 restep=2 
 nroundadd=100 
 comdistmax=7.0
@@ -39,7 +39,7 @@ logfn="pacs.log"
 ndxfn="index.ndx"
 
 
-runmode=12
+runmode=10
 #gmxcmd="mpiexec.hydra -np 1 gmx_mpi "  #gmx serial calling
 #gmxcmd2="mpiexec.hydra -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
 gmxcmd="mpirun -np 1 gmx_mpi "  #gmx serial calling
@@ -79,7 +79,7 @@ def checkcycle():
 				chkfile=False 
 				failcyc=cnt 
 				break
-			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/confgro.gro")):
+			if not(os.path.exists(outfn+"-"+str(n)+"-"+str(cnt)+"/confout.gro")):
 				chkfile=False 
 				failcyc=cnt 
 				break
@@ -269,7 +269,7 @@ while n<nround:
 		#create directory
 		os.system("mkdir "+outfn+"-"+str(n)+"-"+str(m))
 		#dump frame to folder for MD run
-		os.system("echo 'System' | "+gmxcmd+" trjconv -f "+outfn+"-"+str(n-1)+"-"+str(int(comdistcp[len(comdistcp[:,0])-m,2]))+"/topol.xtc  -s "+outfn+"-"+str(n-1)+"-"+str(int(comdistcp[len(comdistcp[:,0])-m,2]))+"/topol.tpr -o "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -dump "+str(float(comdistcp[len(comdistcp[:,0])-m,0]))  )
+		os.system("echo 'System' | "+gmxcmd+" trjconv -f "+outfn+"-"+str(n-1)+"-"+str(int(comdistcp[len(comdistcp[:,0])-m,2]))+"/traj_comp.xtc  -s "+outfn+"-"+str(n-1)+"-"+str(int(comdistcp[len(comdistcp[:,0])-m,2]))+"/topol.tpr -o "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -dump "+str(float(comdistcp[len(comdistcp[:,0])-m,0]))  )
 		#copy needed file for MD run
 		os.system("cp -r "+wdir+"/"+mdfn+" "+outfn+"-"+str(n)+"-"+str(m)+"/")
 		os.system("cp -r "+wdir+"/"+topolfn+" "+outfn+"-"+str(n)+"-"+str(m)+"/")
@@ -297,7 +297,7 @@ while n<nround:
 		print("Expect number of mdloop "+str(mdloop))
 		if (mdloop*runmode)<nbin:
 			lastloop=nbin%runmode
-			mdloop=mdloop+1
+			mdloop=mdloop
 		else:
 			lastloop=0
 		print("Expect number of lastloop "+str(lastloop))
@@ -306,16 +306,24 @@ while n<nround:
 			for m in range(x*runmode+1,(x+1)*runmode+1):
 				multidir=multidir+outfn+"-"+str(n)+"-"+str(m)+"  "
 			if gpu>=0 and ntomp>0:
-				os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				#os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				print(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 			else:
-				os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))		
+				#os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))		
+				os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp))		
+				print(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))
 		if lastloop>0:
+			multidir=" "
 			for m in range(mdloop*runmode+1,nbin+1):
 				multidir=multidir+outfn+"-"+str(n)+"-"+str(m)+"  "
+			print(gmxcmd2lastloop(lastloop))
 			if gpu>=0 and ntomp>0:
-				os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				#os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 			else:
-				os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))		
+				#os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))		
+				os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp))		
 	
 	#check the distribution and add to temperary array
 	def f(m):
