@@ -19,7 +19,7 @@ from multiprocessing import Pool
 
 nbin=30
 nround=100
-rest=0      #set this < 0 to begin the new PaCSMD simulation 
+rest=-1      #set this < 0 to begin the new PaCSMD simulation 
 restep=2 
 nroundadd=100 
 comdistmax=7.0
@@ -165,15 +165,15 @@ if rest<0:
 					os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/topol.tpr -r "+grofn+" -maxwarn 10")		
 	print("################################")
 	if gpu>=0 and ntomp>0:
-		os.system(gmxcmd+" mdrun -deffnm "+outfn+"-0-0/topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+		os.system(gmxcmd+" mdrun "+outfn+"-0-0/topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 	else:
-		os.system(gmxcmd+" mdrun -deffnm "+outfn+"-0-0/topol -v -ntomp "+str(ntomp))
+		os.system(gmxcmd+" mdrun "+outfn+"-0-0/topol -v -ntomp "+str(ntomp))
 	#apply nopbc for calculating the rmsd
-	os.system("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/topol.xtc -o "+outfn+"-0-0/topol-noPBC.xtc -pbc mol -ur compact")
-	print("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/topol.xtc -o "+outfn+"-0-0/topol-noPBC.xtc -pbc mol -ur compact")
+	os.system("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
+	print("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
 	#calculating the rmsd of the first cycle and pick up the 10 best one
-	os.system(gmxcmd+" distance -f "+outfn+"-0-0/topol-noPBC.xtc -s "+outfn+"-0-0/topol.tpr  -n "+ndxfn+" -oall "+outfn+"-0-0/"+outfnpf+"-0-0.xvg -xvg none -tu ps -sf "+wdir+"/sel.dat")
-	print(gmxcmd+" distance -f "+outfn+"-0-0/topol-noPBC.xtc -s "+outfn+"-0-0/topol.tpr  -n "+ndxfn+" -oall "+outfn+"-0-0/"+outfnpf+"-0-0.xvg -xvg none -tu ps -sf "+wdir+"/sel.dat")
+	os.system(gmxcmd+" distance -f "+outfn+"-0-0/traj_comp-noPBC.xtc -s "+outfn+"-0-0/topol.tpr  -n "+ndxfn+" -oall "+outfn+"-0-0/"+outfnpf+"-0-0.xvg -xvg none -tu ps -sf "+wdir+"/sel.dat")
+	print(gmxcmd+" distance -f "+outfn+"-0-0/traj_comp-noPBC.xtc -s "+outfn+"-0-0/topol.tpr  -n "+ndxfn+" -oall "+outfn+"-0-0/"+outfnpf+"-0-0.xvg -xvg none -tu ps -sf "+wdir+"/sel.dat")
 	#reading the rmsd
 	comdist=numpy.loadtxt(outfn+"-0-0/"+outfnpf+"-0-0.xvg")
 	comdistcp=numpy.concatenate((comdist,numpy.zeros((len(comdist[:,1]),1))),1)
@@ -335,7 +335,6 @@ while n<nround:
 	p=Pool(runmode)
 	with p:
 		p.map(f,range(1,nbin+1))
-
 	for m in range(1,nbin+1):	
 		#reading the CV
 		cdtemp=numpy.loadtxt(outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".xvg")
@@ -346,10 +345,8 @@ while n<nround:
 			cdcptemp =numpy.concatenate((cdcptemp,cdcptemp1),0)
 		else:
 			cdcptemp=cdcptemp1
-
 	#Preparing for the next PaCS MD step
 	#Ranking the trajectory
-
 	comdistcp=cdcptemp[numpy.lexsort((cdcptemp[:,0],cdcptemp[:,1]))]
 	#writing the ranking to log file
 	for l in range(1,nbin+1):
