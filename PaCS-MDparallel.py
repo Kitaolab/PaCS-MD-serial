@@ -40,13 +40,14 @@ ndxfn="index.ndx"
 
 
 runmode=10
-#gmxcmd="mpiexec.hydra -np 1 gmx_mpi "  #gmx serial calling
-#gmxcmd2="mpiexec.hydra -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
-gmxcmd="mpirun -np 1 gmx_mpi "  #gmx serial calling
-gmxcmd2="mpirun -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
+gmxcmd="mpiexec.hydra -np 1 gmx_mpi "  #gmx serial calling
+gmxcmd2="mpiexec.hydra -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
+#gmxcmd="mpirun -np 1 gmx_mpi "  #gmx serial calling
+#gmxcmd2="mpirun -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
 def gmxcmd2lastloop(runmodelastloop):
-	tmpstr="mpirun -np "+str(runmodelastloop)+" gmx_mpi "
-	return tmpstr
+    #tmpstr="mpirun -np "+str(runmodelastloop)+" gmx_mpi "
+    tmpstr="mpiexec.hydra -np "+str(runmodelastloop)+" gmx_mpi "
+    return tmpstr
 #use negative number for system choice of MD running conf.
 gpu=-1
 gpuid="0011"
@@ -165,9 +166,9 @@ if rest<0:
 					os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/topol.tpr -r "+grofn+" -maxwarn 10")		
 	print("################################")
 	if gpu>=0 and ntomp>0:
-		os.system(gmxcmd+" mdrun "+outfn+"-0-0/topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+		os.system(gmxcmd+" mdrun -s "+outfn+"-0-0/topol.tpr -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 	else:
-		os.system(gmxcmd+" mdrun "+outfn+"-0-0/topol -v -ntomp "+str(ntomp))
+		os.system(gmxcmd+" mdrun -s "+outfn+"-0-0/topol.tpr -v -ntomp "+str(ntomp))
 	#apply nopbc for calculating the rmsd
 	os.system("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
 	print("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
@@ -357,4 +358,3 @@ while n<nround:
 	if ((comdistmax>0.0) and (comdistcp[len(comdistcp[:,2])-nbin-1,1]>comdistmax) and (n<(nround-1))):		
 		break
 	n=n+1    #this command is for replacing "for" loop with "while" loop
-
