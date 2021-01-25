@@ -166,9 +166,9 @@ if rest<0:
 					os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/topol.tpr -r "+grofn+" -maxwarn 10")		
 	print("################################")
 	if gpu>=0 and ntomp>0:
-		os.system(gmxcmd+" mdrun -s "+outfn+"-0-0/topol.tpr -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+		os.system(gmxcmd+" mdrun "+outfn+"-0-0 -s "+outfn+"-0-0/topol.tpr -o "+outfn+"-0-0/traj.trr -x "+outfn+"-0-0/traj_comp.xtc  -e "+outfn+"-0-0/ener.edr  -g "+outfn+"-0-0/md.log  -c "+outfn+"-0-0/confout.gro  -cpo "+outfn+"-0-0/state.cpt  -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 	else:
-		os.system(gmxcmd+" mdrun -s "+outfn+"-0-0/topol.tpr -v -ntomp "+str(ntomp))
+		os.system(gmxcmd+" mdrun "+outfn+"-0-0 -s "+outfn+"-0-0/topol.tpr -o "+outfn+"-0-0/traj.trr -x "+outfn+"-0-0/traj_comp.xtc  -e "+outfn+"-0-0/ener.edr  -g "+outfn+"-0-0/md.log  -c "+outfn+"-0-0/confout.gro  -cpo "+outfn+"-0-0/state.cpt  -v -ntomp "+str(ntomp))
 	#apply nopbc for calculating the rmsd
 	os.system("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
 	print("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
