@@ -39,7 +39,8 @@ logfn="pacs.log"
 ndxfn="index.ndx"
 
 
-runmode=10
+runmode=10    #using for multidir option in GROMACS
+runmode2=5    #using for multiprocessing package of Python 
 #gmxcmd="mpiexec.hydra -np 1 gmx_mpi "  #gmx serial calling
 #gmxcmd2="mpiexec.hydra -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
 gmxcmd="mpirun -np 1 gmx_mpi "  #gmx serial calling
@@ -283,9 +284,11 @@ while n<nround:
 		else:
 			os.system(gmxcmd+" grompp -f "+outfn+"-"+str(n)+"-"+str(m)+"/"+mdfn+" -c "+outfn+"-"+str(n)+"-"+str(m)+"/input.gro -o "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -r "+grofn+" -maxwarn 10")
 		return 
-	p=Pool(runmode)
+	p=Pool(runmode2)
 	with p:
 		p.map(fn,[tmpvar for tmpvar in range(1,nbin+1)])
+	p.join()
+	p.close()
 	#executing the MD code
 	if runmode==1:
 		for m in range(1,nbin+1):
@@ -333,9 +336,11 @@ while n<nround:
 		#calculating the CV of the run
 		os.system(gmxcmd+" distance -f "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-noPBC.xtc -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -n "+ndxfn+" -oall "+outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".xvg -xvg none -tu ps -sf "+wdir+"/sel.dat")
 		return
-	p=Pool(runmode)
+	p=Pool(runmode2)
 	with p:
 		p.map(f,[tmpvar for tmpvar in range(1,nbin+1)] )
+	p.join()
+	p.close()
 	for m in range(1,nbin+1):	
 		#reading the CV
 		cdtemp=numpy.loadtxt(outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".xvg")
