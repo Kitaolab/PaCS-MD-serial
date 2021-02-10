@@ -17,15 +17,20 @@ from multiprocessing import Pool
 #				to run in parallel mode, set the runmode to number of parallel process
 #################################################
 
-nbin=30
-nround=100
-rest=-1      #set this < 0 to begin the new PaCSMD simulation 
-restep=2 
-nroundadd=100 
-comdistmax=7.0
+nbin=30          #number of replicas of PaCS-MD to run 
+nround=100       #number of cycles of PaCS-MD to run
+rest=-1          #set this < 0 to begin the new PaCSMD simulation, == 0 for automatic restart
+restep=2         #this parameter only use when rest is set greater than 0, this give the specific step to run
+nroundadd=100    #this parameter only use when rest is set greater than 0, this is the number of cycle to add to
+comdistmax=7.0   #stop PaCS-MD when reaching this value 
+
+######################CV setting#############################
 
 groupA="Protein"
 groupB="MOL"
+
+#####################input files setting#####################
+
 grofn="input.gro"
 mdfn="mdpacs.mdp"
 mdinitfn="md.mdp"
@@ -37,26 +42,32 @@ comdistfn="comdist"
 outfnpf="pacs"
 logfn="pacs.log"
 ndxfn="index.ndx"
+skipdata=2 
 
+#######################clean trajectory option###############
 
-runmode=10    #using for multidir option in GROMACS
-runmode2=5    #using for multiprocessing package of Python 
+clntrj=True
+keepgroup="non-Water"
+clnimdtraj=True
+
+##################GROMACS run-setting########################
+
+runmode=5 #using for multidir option in GROMACS
+runmode2=4  #using for multiprocessing package of python within a node.
 #gmxcmd="mpiexec.hydra -np 1 gmx_mpi "  #gmx serial calling
 #gmxcmd2="mpiexec.hydra -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
 gmxcmd="mpirun -np 1 gmx_mpi "  #gmx serial calling
 gmxcmd2="mpirun -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
 def gmxcmd2lastloop(runmodelastloop):
-    tmpstr="mpirun -np "+str(runmodelastloop)+" gmx_mpi "
-    #tmpstr="mpiexec.hydra -np "+str(runmodelastloop)+" gmx_mpi "
+	#tmpstr="mpirun -np "+str(runmodelastloop)+" gmx_mpi "  
+	tmpstr="mpiexec.hydra -np "+str(runmodelastloop)+" gmx_mpi "   
 	return tmpstr
-#use negative number for system choice of MD running conf.
-gpu=-1
+gpu=-1 #use negative number for system choice of MD running conf.
 gpuid="0011"
 ntomp=2  
 
 wdir=os.getcwd()
 outfn=wdir+"/"+outfnpf
-
 
 #################################################
 # Subroutine is below:
@@ -167,17 +178,19 @@ if rest<0:
 					os.system(gmxcmd+" grompp -f "+outfn+"-0-0/"+mdinitfn+" -c "+outfn+"-0-0/"+grofn+" -p "+outfn+"-0-0/"+topolfn+" -o "+outfn+"-0-0/topol.tpr -r "+grofn+" -maxwarn 10")		
 	print("################################")
 	if gpu>=0 and ntomp>0:
-		os.system(gmxcmd+" mdrun -s "+outfn+"-0-0/topol.tpr -o "+outfn+"-0-0/traj.trr -x "+outfn+"-0-0/traj_comp.xtc  -e "+outfn+"-0-0/ener.edr  -g "+outfn+"-0-0/md.log  -c "+outfn+"-0-0/confout.gro  -cpo "+outfn+"-0-0/state.cpt  -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+		os.system(gmxcmd2+" mdrun -s "+outfn+"-0-0/topol.tpr -o "+outfn+"-0-0/traj.trr -x "+outfn+"-0-0/traj_comp.xtc  -e "+outfn+"-0-0/ener.edr  -g "+outfn+"-0-0/md.log  -c "+outfn+"-0-0/confout.gro  -cpo "+outfn+"-0-0/state.cpt -pme gpu -npme 1 -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 	else:
-		os.system(gmxcmd+" mdrun -s "+outfn+"-0-0/topol.tpr -o "+outfn+"-0-0/traj.trr -x "+outfn+"-0-0/traj_comp.xtc  -e "+outfn+"-0-0/ener.edr  -g "+outfn+"-0-0/md.log  -c "+outfn+"-0-0/confout.gro  -cpo "+outfn+"-0-0/state.cpt  -v -ntomp "+str(ntomp))
+		os.system(gmxcmd2+" mdrun -s "+outfn+"-0-0/topol.tpr -o "+outfn+"-0-0/traj.trr -x "+outfn+"-0-0/traj_comp.xtc  -e "+outfn+"-0-0/ener.edr  -g "+outfn+"-0-0/md.log  -c "+outfn+"-0-0/confout.gro  -cpo "+outfn+"-0-0/state.cpt -pme gpu -npme 1 -v -ntomp "+str(ntomp))
 	#apply nopbc for calculating the rmsd
 	os.system("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
 	print("echo 'System' | "+gmxcmd+" trjconv -s "+outfn+"-0-0/topol.tpr -f "+outfn+"-0-0/traj_comp.xtc -o "+outfn+"-0-0/traj_comp-noPBC.xtc -pbc mol -ur compact")
 	#calculating the rmsd of the first cycle and pick up the 10 best one
 	os.system(gmxcmd+" distance -f "+outfn+"-0-0/traj_comp-noPBC.xtc -s "+outfn+"-0-0/topol.tpr  -n "+ndxfn+" -oall "+outfn+"-0-0/"+outfnpf+"-0-0.xvg -xvg none -tu ps -sf "+wdir+"/sel.dat")
 	print(gmxcmd+" distance -f "+outfn+"-0-0/traj_comp-noPBC.xtc -s "+outfn+"-0-0/topol.tpr  -n "+ndxfn+" -oall "+outfn+"-0-0/"+outfnpf+"-0-0.xvg -xvg none -tu ps -sf "+wdir+"/sel.dat")
+	if clnimdtraj==True:
+		os.system("rm -r "+outfn+"-0-0/traj_comp-noPBC.xtc")
 	#reading the rmsd
-	comdist=numpy.loadtxt(outfn+"-0-0/"+outfnpf+"-0-0.xvg")
+	comdist=numpy.loadtxt(outfn+"-0-0/"+outfnpf+"-0-0.xvg",skiprows=skipdata)
 	comdistcp=numpy.concatenate((comdist,numpy.zeros((len(comdist[:,1]),1))),1)
 	comdistcp=comdistcp[numpy.lexsort((comdistcp[:,0],comdistcp[:,1]))]
 	#writing the ranking to log file
@@ -237,7 +250,7 @@ else:
 		if not(os.path.exists(outfn+"-"+str(restep)+"-"+str(m)+"/"+outfnpf+"-"+str(restep)+"-"+str(m)+".xvg")):
 			print("Distance file is not found! Please check the file!")
 			exit()
-		cdtemp=numpy.loadtxt(outfn+"-"+str(restep)+"-"+str(m)+"/"+outfnpf+"-"+str(restep)+"-"+str(m)+".xvg")
+		cdtemp=numpy.loadtxt(outfn+"-"+str(restep)+"-"+str(m)+"/"+outfnpf+"-"+str(restep)+"-"+str(m)+".xvg",skiprows=skipdata)
 		cdcptemp1=[]
 		cdcptemp1=numpy.concatenate((cdtemp,numpy.ones((len(cdtemp[:,1]),1))*(m)),1)
 		#cdcptemp1=cdcptemp1[numpy.lexsort((cdcptemp1[:,0],cdcptemp1[:,1]))]
@@ -286,16 +299,16 @@ while n<nround:
 		return 
 	p=Pool(runmode2)
 	with p:
-		p.map(fn,[tmpvar for tmpvar in range(1,nbin+1)])
-	p.join()
-	p.close()
+		p.map(fn,[tmpvar for tmpvar in range(1,nbin+1)])  
+	p.join()  
+	p.close()   
 	#executing the MD code
 	if runmode==1:
 		for m in range(1,nbin+1):
 			if gpu>=0 and ntomp>0:
-				os.system(gmxcmd2+" mdrun -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj.trr -x "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc  -e "+outfn+"-"+str(n)+"-"+str(m)+"/ener.edr  -g "+outfn+"-"+str(n)+"-"+str(m)+"/md.log  -c "+outfn+"-"+str(n)+"-"+str(m)+"/confout.gro  -cpo "+outfn+"-"+str(n)+"-"+str(m)+"/state.cpt -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-"+str(n)+"-"+str(m)+"/topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
 			else:
-				os.system(gmxcmd2+" mdrun -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj.trr -x "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc  -e "+outfn+"-"+str(n)+"-"+str(m)+"/ener.edr  -g "+outfn+"-"+str(n)+"-"+str(m)+"/md.log  -c "+outfn+"-"+str(n)+"-"+str(m)+"/confout.gro  -cpo "+outfn+"-"+str(n)+"-"+str(m)+"/state.cpt -v -ntomp "+str(ntomp))
+				os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-"+str(n)+"-"+str(m)+"/topol -v -ntomp "+str(ntomp))
 	elif runmode>1: 
 		mdloop=nbin//runmode
 		print("Expect number of mdloop "+str(mdloop))
@@ -338,12 +351,12 @@ while n<nround:
 		return
 	p=Pool(runmode2)
 	with p:
-		p.map(f,[tmpvar for tmpvar in range(1,nbin+1)] )
-	p.join()
-	p.close()
+		p.map(f,[tmpvar for tmpvar in range(1,nbin+1)] )    
+	p.join()  
+	p.close()   
 	for m in range(1,nbin+1):	
 		#reading the CV
-		cdtemp=numpy.loadtxt(outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".xvg")
+		cdtemp=numpy.loadtxt(outfn+"-"+str(n)+"-"+str(m)+"/"+outfnpf+"-"+str(n)+"-"+str(m)+".xvg",skiprows=skipdata)
 		cdcptemp1=[]
 		cdcptemp1=numpy.concatenate((cdtemp,numpy.ones((len(cdtemp[:,1]),1))*(m)),1)
 		#cdcptemp1=cdcptemp1[numpy.lexsort((cdcptemp1[:,0],cdcptemp1[:,1]))]
@@ -351,6 +364,41 @@ while n<nround:
 			cdcptemp =numpy.concatenate((cdcptemp,cdcptemp1),0)
 		else:
 			cdcptemp=cdcptemp1
+	#cleanning trajectories if being selected
+	def f2(m):
+		#apply nopbc for calculating the CV
+		os.system("echo '"+keepgroup+"' | "+gmxcmd+" trjconv -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -f "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc -pbc mol -ur compact")
+		os.system("mv "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc ")
+		#remove the noPBC trajectories
+		os.system("rm -r "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-noPBC.xtc")
+		return
+	def f1a(m):
+		#apply nopbc for calculating the CV
+		os.system("echo '"+keepgroup+"' | "+gmxcmd+" trjconv -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -f "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc -pbc mol -ur compact")
+		os.system("mv "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc ")
+		return
+	def f1b(m):
+		#remove the noPBC trajectories
+		os.system("rm -r "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-noPBC.xtc")
+		return
+	if ((clntrj==True) and (clnimdtraj==True)):
+		p=Pool(runmode2)
+		with p:
+			p.map(f2,[tmpvar for tmpvar in range(1,nbin+1)] )    
+		p.join()  
+		p.close() 
+	elif ((clntrj==True) and (clnimdtraj==False)):
+		p=Pool(runmode2)
+		with p:
+			p.map(f1a,[tmpvar for tmpvar in range(1,nbin+1)] )    
+		p.join()  
+		p.close() 
+	elif ((clntrj==False) and (clnimdtraj==True)):
+		p=Pool(runmode2)
+		with p:
+			p.map(f1b,[tmpvar for tmpvar in range(1,nbin+1)] )    
+		p.join()  
+		p.close() 			
 	#Preparing for the next PaCS MD step
 	#Ranking the trajectory
 	comdistcp=cdcptemp[numpy.lexsort((cdcptemp[:,0],cdcptemp[:,1]))]
@@ -363,4 +411,5 @@ while n<nround:
 	if ((comdistmax>0.0) and (comdistcp[len(comdistcp[:,2])-nbin-1,1]>comdistmax) and (n<(nround-1))):		
 		break
 	n=n+1    #this command is for replacing "for" loop with "while" loop
+
 
