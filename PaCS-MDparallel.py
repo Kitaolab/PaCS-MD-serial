@@ -15,6 +15,7 @@ from multiprocessing import Pool
 # Jan 24 2021: adding support for parallel multidir option in GROMACS:
 #				to run in serial mode, set runmode to 1
 #				to run in parallel mode, set the runmode to number of parallel process
+# Feb 10 2021: adding cleaning simulation trash
 #################################################
 
 nbin=30          #number of replicas of PaCS-MD to run 
@@ -302,6 +303,41 @@ while n<nround:
 		p.map(fn,[tmpvar for tmpvar in range(1,nbin+1)])  
 	p.join()  
 	p.close()   
+	#cleanning trajectories if being selected
+	def f2(m):
+		#apply nopbc for calculating the CV
+		os.system("echo '"+keepgroup+"' | "+gmxcmd+" trjconv -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -f "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc -pbc mol -ur compact")
+		os.system("mv "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc ")
+		#remove the noPBC trajectories
+		os.system("rm -r "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-noPBC.xtc")
+		return
+	def f1a(m):
+		#apply nopbc for calculating the CV
+		os.system("echo '"+keepgroup+"' | "+gmxcmd+" trjconv -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -f "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc -pbc mol -ur compact")
+		os.system("mv "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc ")
+		return
+	def f1b(m):
+		#remove the noPBC trajectories
+		os.system("rm -r "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-noPBC.xtc")
+		return
+	if ((clntrj==True) and (clnimdtraj==True)):
+		p=Pool(runmode2)
+		with p:
+			p.map(f2,[tmpvar for tmpvar in range(1,nbin+1)] )    
+		p.join()  
+		p.close() 
+	elif ((clntrj==True) and (clnimdtraj==False)):
+		p=Pool(runmode2)
+		with p:
+			p.map(f1a,[tmpvar for tmpvar in range(1,nbin+1)] )    
+		p.join()  
+		p.close() 
+	elif ((clntrj==False) and (clnimdtraj==True)):
+		p=Pool(runmode2)
+		with p:
+			p.map(f1b,[tmpvar for tmpvar in range(1,nbin+1)] )    
+		p.join()  
+		p.close() 			
 	#executing the MD code
 	if runmode==1:
 		for m in range(1,nbin+1):
@@ -364,41 +400,6 @@ while n<nround:
 			cdcptemp =numpy.concatenate((cdcptemp,cdcptemp1),0)
 		else:
 			cdcptemp=cdcptemp1
-	#cleanning trajectories if being selected
-	def f2(m):
-		#apply nopbc for calculating the CV
-		os.system("echo '"+keepgroup+"' | "+gmxcmd+" trjconv -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -f "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc -pbc mol -ur compact")
-		os.system("mv "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc ")
-		#remove the noPBC trajectories
-		os.system("rm -r "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-noPBC.xtc")
-		return
-	def f1a(m):
-		#apply nopbc for calculating the CV
-		os.system("echo '"+keepgroup+"' | "+gmxcmd+" trjconv -s "+outfn+"-"+str(n)+"-"+str(m)+"/topol.tpr -f "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc -o "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc -pbc mol -ur compact")
-		os.system("mv "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-nowat.xtc "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp.xtc ")
-		return
-	def f1b(m):
-		#remove the noPBC trajectories
-		os.system("rm -r "+outfn+"-"+str(n)+"-"+str(m)+"/traj_comp-noPBC.xtc")
-		return
-	if ((clntrj==True) and (clnimdtraj==True)):
-		p=Pool(runmode2)
-		with p:
-			p.map(f2,[tmpvar for tmpvar in range(1,nbin+1)] )    
-		p.join()  
-		p.close() 
-	elif ((clntrj==True) and (clnimdtraj==False)):
-		p=Pool(runmode2)
-		with p:
-			p.map(f1a,[tmpvar for tmpvar in range(1,nbin+1)] )    
-		p.join()  
-		p.close() 
-	elif ((clntrj==False) and (clnimdtraj==True)):
-		p=Pool(runmode2)
-		with p:
-			p.map(f1b,[tmpvar for tmpvar in range(1,nbin+1)] )    
-		p.join()  
-		p.close() 			
 	#Preparing for the next PaCS MD step
 	#Ranking the trajectory
 	comdistcp=cdcptemp[numpy.lexsort((cdcptemp[:,0],cdcptemp[:,1]))]
