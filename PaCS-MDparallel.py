@@ -15,12 +15,11 @@ from multiprocessing import Pool
 # Jan 24 2021: adding support for parallel multidir option in GROMACS:
 #				to run in serial mode, set runmode to 1
 #				to run in parallel mode, set the runmode to number of parallel process
-# Feb 10 2021: adding cleaning simulation trash
 #################################################
 
 nbin=30          #number of replicas of PaCS-MD to run 
 nround=100       #number of cycles of PaCS-MD to run
-rest=-1          #set this < 0 to begin the new PaCSMD simulation, == 0 for automatic restart
+rest=0          #set this < 0 to begin the new PaCSMD simulation, == 0 for automatic restart
 restep=2         #this parameter only use when rest is set greater than 0, this give the specific step to run
 nroundadd=100    #this parameter only use when rest is set greater than 0, this is the number of cycle to add to
 comdistmax=7.0   #stop PaCS-MD when reaching this value 
@@ -28,7 +27,7 @@ comdistmax=7.0   #stop PaCS-MD when reaching this value
 ######################CV setting#############################
 
 groupA="Protein"
-groupB="MOL"
+groupB="DNA"
 
 #####################input files setting#####################
 
@@ -53,12 +52,12 @@ clnimdtraj=True
 
 ##################GROMACS run-setting########################
 
-runmode=5 #using for multidir option in GROMACS
-runmode2=4  #using for multiprocessing package of python within a node.
-#gmxcmd="mpiexec.hydra -np 1 gmx_mpi "  #gmx serial calling
-#gmxcmd2="mpiexec.hydra -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
-gmxcmd="mpirun -np 1 gmx_mpi "  #gmx serial calling
-gmxcmd2="mpirun -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
+runmode=30 #using for multidir option in GROMACS
+runmode2=10  #using for multiprocessing package of python within a node.
+gmxcmd="mpiexec.hydra -np 1 gmx_mpi "  #gmx serial calling
+gmxcmd2="mpiexec.hydra -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
+#gmxcmd="mpirun -np 1 gmx_mpi "  #gmx serial calling
+#gmxcmd2="mpirun -np "+str(runmode)+" gmx_mpi "#call MPI task in this variable
 def gmxcmd2lastloop(runmodelastloop):
 	#tmpstr="mpirun -np "+str(runmodelastloop)+" gmx_mpi "  
 	tmpstr="mpiexec.hydra -np "+str(runmodelastloop)+" gmx_mpi "   
@@ -121,8 +120,6 @@ def checkcycle():
 	print("Simulation was terminated at CYCLE "+str(n-1)+" and REPLICA "+str(cnt)+". Simulation will restart at this cycle.")
 	return n-1
 			
-
-
 #################################################
 # Main program is below:
 #################################################
@@ -222,6 +219,46 @@ else:
 		rnd=checkcycle()
 		restep=rnd-1
 		print("ROUND of current PACS MD is ",rnd)
+	#re-executing the MD code for regenerating the last cycle
+	n=restep
+	if runmode==1:
+		for m in range(1,nbin+1):
+			if gpu>=0 and ntomp>0:
+				os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-"+str(n)+"-"+str(m)+"/topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+			else:
+				os.system(gmxcmd2+" mdrun -deffnm "+outfn+"-"+str(n)+"-"+str(m)+"/topol -v -ntomp "+str(ntomp))
+	elif runmode>1: 
+		mdloop=nbin//runmode
+		print("Expect number of mdloop "+str(mdloop))
+		if (mdloop*runmode)<nbin:
+			lastloop=nbin%runmode
+			mdloop=mdloop
+		else:
+			lastloop=0
+		print("Expect number of lastloop "+str(lastloop))
+		for x in range(0,mdloop):
+			multidir=" "
+			for m in range(x*runmode+1,(x+1)*runmode+1):
+				multidir=multidir+outfn+"-"+str(n)+"-"+str(m)+"  "
+			if gpu>=0 and ntomp>0:
+				#os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				print(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+			else:
+				#os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))		
+				os.system(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp))		
+				print(gmxcmd2+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))
+		if lastloop>0:
+			multidir=" "
+			for m in range(mdloop*runmode+1,nbin+1):
+				multidir=multidir+outfn+"-"+str(n)+"-"+str(m)+"  "
+			print(gmxcmd2lastloop(lastloop))
+			if gpu>=0 and ntomp>0:
+				#os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+				os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp)+" -gpu_id "+str(gpuid))
+			else:
+				#os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -v -ntomp "+str(ntomp))		
+				os.system(gmxcmd2lastloop(lastloop)+" mdrun -multidir "+multidir+" -s topol -ntomp "+str(ntomp))		
 	# rewrite the PACS MD log:
 	if os.path.exists(wdir+"/"+logfn):
 		i=0
@@ -412,5 +449,6 @@ while n<nround:
 	if ((comdistmax>0.0) and (comdistcp[len(comdistcp[:,2])-nbin-1,1]>comdistmax) and (n<(nround-1))):		
 		break
 	n=n+1    #this command is for replacing "for" loop with "while" loop
+
 
 
