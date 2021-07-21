@@ -82,7 +82,7 @@ def GROcheck():
 	f=open("gmxversion","r")
 	ln=f.readlines()
 	vers=ln[0].split()[-1].split(".")[0]
-	return float(vers)
+	return vers
 	
 def writesel(fn,txt):
 	f=open(fn,"w")
@@ -135,7 +135,7 @@ def checkcycle():
 #################################################
 
 #check version of GROMACS
-vers=GROcheck()
+vers=re.sub("[^\d\.]", "", GROcheck())
 
 ######write selection file#####
 writesel(wdir+"/sel.dat",'com of group "'+groupA+'" plus com of group "'+groupB+'"')
