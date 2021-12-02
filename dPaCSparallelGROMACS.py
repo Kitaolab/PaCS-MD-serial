@@ -43,7 +43,6 @@ itpfn="*.itp"
 comdistfn="comdist"
 outfnpf="pacs"
 logfn="pacs.log"
-ndxfn="index.ndx"
 selfn="seltext.txt"
 skipdata=2 
 
