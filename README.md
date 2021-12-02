@@ -4,6 +4,7 @@
 * PaCS-MDparallel.py: python script for PaCS-MD dissociation simulations performing parallelly all the replicas within a cycle parallelly. In addition, the analysis loop is also parallelized.
 * dPaCS-MDparallelGROMACS.py: special version of the above for FUGAKU supercomputer using GROMACS
 * adPaCSMD.py: python script for switching between association and dissociation PaCS-MD simulations 
+* rmsdPaCSamber.py: python script for rmsd PaCS-MD using AMBER.
 
 
 ## Prerequisites
